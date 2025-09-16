@@ -35,17 +35,19 @@ class User extends Authenticatable
     ];
     /**
      * Rooms that the user participates in.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany|\App\Models\Room[]
      */
     public function rooms()
     {
-        return $this->belongsToMany(Room::class, 'room_user');
+        return $this->belongsToMany(Room::class, 'room_user')->withTimestamps();
     }
 
-    public function owner()
+
+    public function isAdmin()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->permission === 'admin';
     }
-
 
     /**
      * The attributes that should be hidden for serialization.

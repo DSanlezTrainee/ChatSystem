@@ -15,9 +15,24 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
+        $admin = \App\Models\User::firstOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Admin User',
+            'permission' => 'admin',
+            'status' => 'active',
+            'password' => bcrypt('test1234'),
         ]);
+
+        // Ensure 'All Talk' room exists with admin as owner
+        $admin = \App\Models\User::where('permission', 'admin')->first();
+        if ($admin) {
+            \App\Models\Room::firstOrCreate([
+                'name' => 'All Talk',
+            ], [
+                'avatar' => null,
+                'owner_id' => $admin->id,
+            ]);
+        }
     }
 }

@@ -1,36 +1,59 @@
 <?php
 
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Request;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\InviteController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ServerInviteController;
 
+//Invites
+Route::get('/invite/{token}', [ServerInviteController::class, 'accept']);
 
 Route::middleware(['auth', 'is_admin'])->group(function () {
 
-
     // Rooms
-    Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+
     Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
     Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
     Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
     Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
 
+    // Invites Server
+    Route::post('/server-invite/generate', [ServerInviteController::class, 'generate']);
+    Route::get('/server-invite/current', [ServerInviteController::class, 'current'])->middleware('auth');
 
-    // Invites
-    Route::get('invites', [App\Http\Controllers\InviteController::class, 'index']);
-    Route::post('invites', [App\Http\Controllers\InviteController::class, 'store']);
-    Route::patch('invites/{invite}', [App\Http\Controllers\InviteController::class, 'update']);
+    // Invites Rooms
+    Route::get('invites', [InviteController::class, 'index']);
+    Route::post('invites', [InviteController::class, 'store']);
+    Route::patch('invites/{invite}', [InviteController::class, 'update']);
 });
 
 Route::middleware(['auth'])->group(function () {
+    // User info
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+    
+    Route::get('/chat', function () {
+        return Inertia::render('Chat/ChatPage');
+    })->name('chat');
+
 
     // Messages
-    Route::get('messages', [App\Http\Controllers\MessageController::class, 'index']);
-    Route::post('messages', [App\Http\Controllers\MessageController::class, 'store']);
-    Route::put('messages/{message}', [App\Http\Controllers\MessageController::class, 'update']);
-    Route::delete('messages/{message}', [App\Http\Controllers\MessageController::class, 'destroy']);
+    Route::get('messages', [MessageController::class, 'index']);
+    Route::post('messages', [MessageController::class, 'store']);
+    Route::get('messages/{room}', [MessageController::class, 'getMessagesByRoom']);
+    Route::put('messages/{message}', [MessageController::class, 'update']);
+    Route::delete('messages/{message}', [MessageController::class, 'destroy']);
+
+    // Users for DMs
+    Route::get('/users', function () {
+        return \App\Models\User::all(['id', 'name', 'avatar', 'status']);
+    });
 });
 
 Route::get('/', function () {

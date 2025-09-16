@@ -5,9 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class MessageController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Message::class, 'message');
+    }
+
     public function index(Request $request)
     {
         $roomId = $request->query('room_id');
@@ -36,23 +42,16 @@ class MessageController extends Controller
 
     public function update(Request $request, Message $message)
     {
-        $user = $request->user();
-        if ($user->permission !== 'admin' && $user->id !== $message->user_id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
         $data = $request->validate([
             'content' => 'required|string',
         ]);
+
         $message->update($data);
         return response()->json($message->fresh()->load(['user', 'room', 'toUser']));
     }
 
     public function destroy(Request $request, Message $message)
     {
-        $user = $request->user();
-        if ($user->permission !== 'admin' && $user->id !== $message->user_id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
         $message->delete();
         return response()->noContent();
     }
