@@ -14,6 +14,7 @@ class Message extends Model
         'room_id',
         'to_user_id',
         'content',
+        'file_path',
     ];
 
     public function user()

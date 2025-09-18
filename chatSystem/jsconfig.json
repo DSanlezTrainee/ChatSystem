@@ -5,5 +5,11 @@
             "@/*": ["resources/js/*"]
         }
     },
-    "exclude": ["node_modules", "public"]
+    "exclude": [
+        "node_modules",
+        "public",
+        "resources/js/Components/UserSelectionModal.vue",
+        "resources/js/Pages/Chat/ChatWindow.vue",
+        "resources/js/Pages/Chat/Message.vue"
+    ]
 }

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -40,13 +39,26 @@ class User extends Authenticatable
      */
     public function rooms()
     {
-        return $this->belongsToMany(Room::class, 'room_user')->withTimestamps();
+        return $this->belongsToMany(Room::class, 'room_user')
+            ->using(RoomUser::class)
+            ->withPivot('joined_at')
+            ->withTimestamps();
     }
 
 
     public function isAdmin()
     {
         return $this->permission === 'admin';
+    }
+
+    /**
+     * Get the admin status for the user.
+     *
+     * @return bool
+     */
+    public function getIsAdminAttribute()
+    {
+        return $this->isAdmin();
     }
 
     /**
@@ -68,6 +80,7 @@ class User extends Authenticatable
      */
     protected $appends = [
         'profile_photo_url',
+        'is_admin',
     ];
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\RequireValidInvite;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'is_admin' => AdminMiddleware::class,
+            'require_valid_invite' => RequireValidInvite::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

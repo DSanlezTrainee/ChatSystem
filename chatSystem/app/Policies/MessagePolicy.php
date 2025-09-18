@@ -44,7 +44,7 @@ class MessagePolicy
      */
     public function delete(User $user, Message $message): bool
     {
-        return $user->permission->isAdmin() || $user->id === $message->user_id;
+        return $user->isAdmin() || $user->id === $message->user_id;
     }
 
     /**

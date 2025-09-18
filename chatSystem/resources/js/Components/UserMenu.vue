@@ -77,7 +77,7 @@ const logout = () => {
     border: none;
     position: absolute;
     left: 200px;
-    bottom: 80px;
+    bottom: 20px;
     cursor: pointer;
     z-index: 20;
 }

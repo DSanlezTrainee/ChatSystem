@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\RoomUser;
 
 class Room extends Model
 {
@@ -19,7 +20,10 @@ class Room extends Model
      */
     public function users()
     {
-        return $this->belongsToMany(User::class, 'room_user')->withTimestamps();
+        return $this->belongsToMany(User::class, 'room_user')
+            ->using(RoomUser::class)
+            ->withPivot('joined_at')
+            ->withTimestamps();
     }
 
     /**
