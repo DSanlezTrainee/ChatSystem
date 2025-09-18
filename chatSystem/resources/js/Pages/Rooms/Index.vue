@@ -44,8 +44,6 @@ const props = defineProps({
 });
 
 function goToRoom(id) {
-    console.log("Navigating to room:", id);
-
     router.visit(`/rooms/${id}`, {
         preserveState: false,
         preserveScroll: false,

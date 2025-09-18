@@ -222,7 +222,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { router } from "@inertiajs/vue3";
 import Sidebar from "@/Pages/Chat/Sidebar.vue";
 

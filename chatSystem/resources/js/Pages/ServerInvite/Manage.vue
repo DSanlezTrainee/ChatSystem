@@ -2,6 +2,7 @@
     <div class="flex h-screen bg-black">
         <!-- Sidebar com navegação -->
         <Sidebar
+            :server="server"
             :rooms="rooms"
             :users="users"
             :selectedRoom="null"
@@ -22,12 +23,88 @@
 
             <div class="flex-1 overflow-y-auto p-4 bg-gray-800 text-white">
                 <div class="max-w-3xl mx-auto mt-5">
-                    <!-- Seção de link atual -->
                     <div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-6">
-                        <h2 class="text-xl font-bold mb-4">Current Link</h2>
+                        <div
+                            class="flex items-center gap-4 mb-6 justify-center"
+                        >
+                            <button
+                                @click="triggerFileInput"
+                                class="bg-gray-800 rounded-full p-2 flex items-center justify-center mr-2"
+                                type="button"
+                                style="height: 40px; width: 40px"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="w-6 h-6 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 7h2l2-3h6l2 3h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+                                    />
+                                    <circle cx="12" cy="13" r="4" />
+                                </svg>
+                                <input
+                                    ref="fileInput"
+                                    type="file"
+                                    accept="image/*"
+                                    class="hidden"
+                                    @change="onFileChange"
+                                />
+                            </button>
+
+                            <!-- Imagem ao centro -->
+                            <img
+                                :src="server.avatar || '/default-server.png'"
+                                alt="Server Avatar"
+                                class="w-16 h-16 rounded-2xl object-cover border border-gray-600 mx-2"
+                                style="box-shadow: 0 0 8px #222"
+                            />
+
+                            <!-- No separate avatar update button -->
+                        </div>
+
+                        <div
+                            class="flex items-center gap-4 mb-6 justify-center"
+                        >
+                            <input
+                                v-model="serverName"
+                                type="text"
+                                class="w-80 bg-gray-700 text-white border border-gray-600 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
+                                style="min-width: 180px"
+                                placeholder="Server name"
+                            />
+                            <button
+                                @click="updateServerName"
+                                class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                                :disabled="isUpdatingName"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-6"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m4.5 12.75 6 6 9-13.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
 
                         <div v-if="pendingInvite" class="mb-4">
-                            <div class="bg-gray-800 p-4 rounded-lg mb-3">
+                            <div class="bg-gray-800 p-2 rounded-lg mb-2">
+                                <h4 class="font-bold mb-2 text-center">
+                                    Share this to invite people
+                                </h4>
                                 <div
                                     class="flex flex-col md:flex-row md:items-center justify-between gap-3"
                                 >
@@ -36,7 +113,7 @@
                                             type="text"
                                             :value="pendingInvite.invite_link"
                                             readonly
-                                            class="w-full bg-gray-700 text-white border border-gray-600 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     <div class="flex gap-2">
@@ -87,7 +164,7 @@
                                 </div>
                                 <div class="text-sm text-gray-400 mt-2">
                                     <span
-                                        >Criado em:
+                                        >Crated at:
                                         {{
                                             formatDate(pendingInvite.created_at)
                                         }}</span
@@ -119,8 +196,15 @@ import { ref } from "vue";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import Sidebar from "@/Pages/Chat/Sidebar.vue";
+import { watch } from "vue";
+
+// Configure axios to include CSRF token for Laravel
+axios.defaults.headers.common["X-CSRF-TOKEN"] = document
+    .querySelector('meta[name="csrf-token"]')
+    ?.getAttribute("content");
 
 const props = defineProps({
+    server: Object,
     pendingInvite: Object,
     usedInvites: Array,
     rooms: Array,
@@ -130,13 +214,78 @@ const props = defineProps({
 
 const isGenerating = ref(false);
 const showCopiedNotification = ref(false);
+const isUpdatingName = ref(false);
+const serverName = ref(props.server?.name || "");
+const selectedFile = ref(null);
 
-// Gerar novo link de convite
+watch(
+    () => props.server,
+    (newServer) => {
+        if (newServer) {
+            serverName.value = newServer.name || "";
+            console.log("Server name updated to:", serverName.value);
+        }
+    },
+    { immediate: true }
+);
+
+const fileInput = ref(null);
+function triggerFileInput() {
+    fileInput.value.click();
+}
+
+function updateServerName() {
+    if (!serverName.value.trim()) return;
+    isUpdatingName.value = true;
+
+    if (!props.server || !props.server.id) {
+        isUpdatingName.value = false;
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", serverName.value);
+
+    if (selectedFile.value) {
+        formData.append("avatar", selectedFile.value);
+    }
+
+    formData.append("_method", "PUT");
+
+    axios
+        .post(`/servers/${props.server.id}`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+                "X-Requested-With": "XMLHttpRequest",
+                Accept: "application/json",
+            },
+        })
+        .then((response) => {
+            console.log("Server update response:", response.data);
+            if (response.data && response.data.server) {
+                props.server.name = response.data.server.name;
+
+                if (response.data.server.avatar) {
+                    props.server.avatar = response.data.server.avatar;
+                }
+                selectedFile.value = null;
+            }
+            isUpdatingName.value = false;
+            alert("Server updated successfully");
+        })
+        .catch((error) => {
+            console.error(
+                "Server update error:",
+                error.response?.data || error
+            );
+            isUpdatingName.value = false;
+            alert("Failed to update server");
+        });
+}
+
 async function generateNewInviteLink() {
     isGenerating.value = true;
-
     try {
-        // Use axios para fazer uma requisição AJAX
         const response = await axios.post(
             "/server-invite/generate",
             {},
@@ -148,16 +297,12 @@ async function generateNewInviteLink() {
                 },
             }
         );
-
         if (response.data && response.data.invite_link) {
-            // Atualizar pendingInvite diretamente sem recarregar a página
             props.pendingInvite = {
                 token: response.data.token,
                 invite_link: response.data.invite_link,
                 created_at: new Date().toISOString(),
             };
-
-            // Atualizar a página para refletir as mudanças
             router.reload({ only: ["pendingInvite"] });
         }
     } catch (error) {
@@ -168,12 +313,10 @@ async function generateNewInviteLink() {
     }
 }
 
-// Copiar link para a área de transferência
 function copyInviteLink(link) {
     console.log("Copiando link:", link);
 
     try {
-        // Método mais robusto para copiar para a área de transferência
         const textarea = document.createElement("textarea");
         textarea.value = link;
         textarea.style.position = "fixed";
@@ -197,7 +340,6 @@ function copyInviteLink(link) {
         }
     } catch (err) {
         console.error("Erro ao copiar link:", err);
-        // Fallback para navegadores modernos
         navigator.clipboard
             .writeText(link)
             .then(() => {
@@ -212,7 +354,6 @@ function copyInviteLink(link) {
     }
 }
 
-// Formatar data
 function formatDate(dateString) {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -223,5 +364,20 @@ function formatDate(dateString) {
         hour: "2-digit",
         minute: "2-digit",
     }).format(date);
+}
+
+function onFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Store the file reference for later upload
+    selectedFile.value = file;
+
+    // Create preview using Data URL for display only
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        props.server.avatar = ev.target.result; // This is just for preview
+    };
+    reader.readAsDataURL(file);
 }
 </script>

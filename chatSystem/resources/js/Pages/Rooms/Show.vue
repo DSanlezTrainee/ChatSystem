@@ -27,7 +27,6 @@
                             class="bg-gray-700 text-white px-3 py-1 rounded-full text-sm"
                         >
                             {{ user.name }}
-                            <!-- Mostrar informação de joined_at se disponível -->
                             <span
                                 v-if="user.pivot && user.pivot.joined_at"
                                 class="text-xs text-gray-300 ml-1"
@@ -365,7 +364,6 @@ function handleFileUpload(e) {
         .catch((err) => {
             alert("Error uploading file");
         });
-    // Clear input
     fileInput.value.value = "";
 }
 
@@ -400,7 +398,6 @@ function sendMessage() {
             onSuccess: () => {
                 newMessage.value = "";
 
-                console.log("Reloading page to refresh messages...");
                 router.reload({
                     preserveScroll: true,
                     preserveState: false,

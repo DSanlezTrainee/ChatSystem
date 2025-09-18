@@ -113,6 +113,9 @@ class ServerInviteController extends Controller
             $rooms = $user->rooms;
             $users = \App\Models\User::where('id', '!=', $user->id)->get(['id', 'name', 'avatar', 'status']);
 
+            // Get the server data
+            $server = \App\Models\Server::first();
+
             return Inertia::render('ServerInvite/Manage', [
                 'pendingInvite' => $pendingInvite ? [
                     'token' => $pendingInvite->token,
@@ -122,7 +125,8 @@ class ServerInviteController extends Controller
                 'usedInvites' => $usedInvites,
                 'rooms' => $rooms,
                 'users' => $users,
-                'currentUser' => $user
+                'currentUser' => $user,
+                'server' => $server 
             ]);
         } catch (\Exception $e) {
             // Log o erro

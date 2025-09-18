@@ -3,7 +3,13 @@
         class="w-64 bg-gray-900 text-white h-full flex flex-col border-r border-gray-800"
     >
         <div class="p-4 font-bold text-lg border-b border-gray-800">
-            Chat System
+            {{ server?.name || "Chat System" }}
+            <img
+                v-if="server?.avatar"
+                :src="server.avatar"
+                alt="Server Avatar"
+                class="h-8 w-8 rounded-full inline-block ml-2"
+            />
         </div>
         <div class="flex-1 overflow-y-auto">
             <div class="mt-4">
@@ -172,6 +178,7 @@ function goToServerInvites() {
 }
 
 defineProps({
+    server: Object,
     rooms: Array,
     users: Array,
     selectedRoom: Object,

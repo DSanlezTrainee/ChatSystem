@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\InviteController;
+use App\Http\Controllers\ServerController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ServerInviteController;
 use App\Http\Controllers\CustomRegistrationController;
@@ -40,6 +41,9 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
     Route::post('invites', [InviteController::class, 'store'])->name('invites.store');
     Route::patch('invites/{invite}', [InviteController::class, 'update'])->name('invites.update');
     Route::get('invites/manage', [InviteController::class, 'manage'])->name('invites.manage');
+
+    //Server Management
+    Route::put('/servers/{server}', [ServerController::class, 'update']);
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -48,11 +52,9 @@ Route::middleware(['auth'])->group(function () {
         return $request->user();
     });
 
-    // Rooms routes - Inertia pages
+    // Rooms routes 
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-
     Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
-
     Route::get('/chat/users/{user}', [MessageController::class, 'directMessagePage'])->name('chat.dm');
 
     // Messages
