@@ -185,6 +185,61 @@
                     >
                         Link copied to clipboard!
                     </div>
+
+                    <!-- User List with Delete -->
+                    <div class="bg-gray-900 p-6 rounded-lg shadow-lg mb-6 mt-8">
+                        <h2 class="text-lg font-bold mb-4 text-center">
+                            Server Users
+                        </h2>
+                        <ul>
+                            <li
+                                v-for="user in users"
+                                :key="user.id"
+                                class="flex items-center justify-between py-2 border-b border-gray-800"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <img
+                                        :src="
+                                            user.profile_photo_url ||
+                                            '/default-avatar.png'
+                                        "
+                                        alt="Avatar"
+                                        class="w-8 h-8 rounded-full border border-gray-600"
+                                    />
+                                    <span class="font-medium">{{
+                                        user.name
+                                    }}</span>
+                                    <span class="text-xs text-gray-400 ml-2">{{
+                                        user.email
+                                    }}</span>
+                                </div>
+                                <button
+                                    @click="deleteUser(user)"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded flex items-center"
+                                    :disabled="deletingUserId === user.id"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5 text-white"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                            </li>
+                        </ul>
+                        <div
+                            v-if="users.length === 0"
+                            class="text-gray-400 text-center mt-4"
+                        >
+                            No users found.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,6 +272,37 @@ const showCopiedNotification = ref(false);
 const isUpdatingName = ref(false);
 const serverName = ref(props.server?.name || "");
 const selectedFile = ref(null);
+
+const deletingUserId = ref(null);
+
+function deleteUser(user) {
+    if (!user || !user.id) return;
+    if (
+        !confirm(
+            `Are you sure you want to delete user '${user.name}'? This action cannot be undone.`
+        )
+    )
+        return;
+    deletingUserId.value = user.id;
+    axios
+        .delete(`/users/${user.id}`)
+        .then(() => {
+            // Remove user from local list
+            const idx = props.users.findIndex((u) => u.id === user.id);
+            if (idx !== -1) props.users.splice(idx, 1);
+            alert("User deleted successfully");
+        })
+        .catch((error) => {
+            console.error(
+                "Error deleting user:",
+                error.response?.data || error
+            );
+            alert("Failed to delete user");
+        })
+        .finally(() => {
+            deletingUserId.value = null;
+        });
+}
 
 watch(
     () => props.server,

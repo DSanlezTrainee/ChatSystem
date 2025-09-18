@@ -32,14 +32,14 @@
                         <div class="mb-6">
                             <label
                                 for="roomName"
-                                class="block text-white text-lg font-medium mb-2"
+                                class="block text-white text-lg font-medium mb-2 flex justify-center"
                                 >Room Name</label
                             >
                             <input
                                 v-model="form.name"
                                 type="text"
                                 id="roomName"
-                                class="w-full bg-gray-800 text-white border border-gray-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-80 bg-gray-800 text-white border border-gray-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mx-auto block"
                                 placeholder="Digite o nome da sala"
                                 required
                             />

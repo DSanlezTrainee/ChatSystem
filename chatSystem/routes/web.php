@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\MessageController;
@@ -14,7 +15,6 @@ use App\Http\Controllers\CustomRegistrationController;
 //Invites
 Route::get('/invite/{token}', [ServerInviteController::class, 'accept']);
 
-// Sobrescrever rotas de registro do Fortify para exigir convite válido
 Route::get('/register', [CustomRegistrationController::class, 'create'])
     ->middleware(['guest', 'require_valid_invite'])
     ->name('register');
@@ -44,6 +44,8 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
 
     //Server Management
     Route::put('/servers/{server}', [ServerController::class, 'update']);
+
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
 });
 
 Route::middleware(['auth'])->group(function () {
