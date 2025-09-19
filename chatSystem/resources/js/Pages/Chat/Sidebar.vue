@@ -173,7 +173,6 @@ function goToAddUsers(roomId) {
 }
 
 function goToServerInvites() {
-    console.log("Clicado no botão de convites");
     visitRoute("/server-invite/manage");
 }
 

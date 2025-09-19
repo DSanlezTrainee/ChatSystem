@@ -1,6 +1,5 @@
 <template>
     <div class="flex h-screen bg-black">
-        <!-- Sidebar com navegação -->
         <Sidebar
             :server="server"
             :rooms="rooms"
@@ -11,7 +10,6 @@
             :jetstream="$page.props.jetstream"
         />
 
-        <!-- Conteúdo principal -->
         <div class="flex-1 flex flex-col m">
             <header
                 class="bg-gray-900 text-white p-4 border-b border-gray-800 flex items-center justify-between"
@@ -193,7 +191,7 @@
                         </h2>
                         <ul>
                             <li
-                                v-for="user in users"
+                                v-for="user in localUsers"
                                 :key="user.id"
                                 class="flex items-center justify-between py-2 border-b border-gray-800"
                             >
@@ -213,28 +211,50 @@
                                         user.email
                                     }}</span>
                                 </div>
-                                <button
-                                    @click="deleteUser(user)"
-                                    class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded flex items-center"
-                                    :disabled="deletingUserId === user.id"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5 text-white"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        @click="togglePermission(user)"
+                                        :class="[
+                                            'px-2 py-1 rounded flex items-end',
+                                            user.permission === 'admin'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-white text-blue-500 border border-blue-500',
+                                        ]"
                                     >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="#FFD700"
+                                            class="w-5 h-5"
+                                        >
+                                            <path
+                                                d="M4 17L2 7l5 4 5-9 5 9 5-4-2 10H4zm0 2h16v2H4v-2z"
+                                            />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        @click="deleteUser(user)"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded flex items-center"
+                                        :disabled="deletingUserId === user.id"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5 text-white"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
                             </li>
                         </ul>
                         <div
-                            v-if="users.length === 0"
+                            v-if="localUsers.length === 0"
                             class="text-gray-400 text-center mt-4"
                         >
                             No users found.
@@ -252,11 +272,41 @@ import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import Sidebar from "@/Pages/Chat/Sidebar.vue";
 import { watch } from "vue";
+import { reactive } from "vue";
 
 // Configure axios to include CSRF token for Laravel
 axios.defaults.headers.common["X-CSRF-TOKEN"] = document
     .querySelector('meta[name="csrf-token"]')
     ?.getAttribute("content");
+
+// Function to initialize user permissions from server/backend data
+// and ensure they are properly set for UI rendering
+function initUserPermissions(usersList) {
+    if (!Array.isArray(usersList)) return [];
+
+    // Try to get saved permissions from localStorage
+    let savedPermissions = {};
+    try {
+        savedPermissions = JSON.parse(
+            localStorage.getItem("userPermissions") || "{}"
+        );
+        console.log("Loaded saved permissions:", savedPermissions);
+    } catch (err) {
+        console.error("Error loading saved permissions:", err);
+    }
+
+    return usersList.map((user) => {
+        // Use saved permission from localStorage if available, otherwise use server value
+        const effectivePermission =
+            savedPermissions[user.id] || user.permission;
+
+        return {
+            ...user,
+            // Ensure permission is exactly 'admin' or 'user' for class binding
+            permission: effectivePermission === "admin" ? "admin" : "user",
+        };
+    });
+}
 
 const props = defineProps({
     server: Object,
@@ -274,6 +324,9 @@ const serverName = ref(props.server?.name || "");
 const selectedFile = ref(null);
 
 const deletingUserId = ref(null);
+// Create a reactive copy of the users array that we'll use for rendering
+// Properly initialize users with permission data
+const localUsers = reactive(initUserPermissions(props.users));
 
 function deleteUser(user) {
     if (!user || !user.id) return;
@@ -283,25 +336,40 @@ function deleteUser(user) {
         )
     )
         return;
+
+    // Set deleting state
     deletingUserId.value = user.id;
-    axios
-        .delete(`/users/${user.id}`)
-        .then(() => {
-            // Remove user from local list
-            const idx = props.users.findIndex((u) => u.id === user.id);
-            if (idx !== -1) props.users.splice(idx, 1);
-            alert("User deleted successfully");
-        })
-        .catch((error) => {
-            console.error(
-                "Error deleting user:",
-                error.response?.data || error
-            );
-            alert("Failed to delete user");
-        })
-        .finally(() => {
-            deletingUserId.value = null;
-        });
+
+    // First remove from local array for immediate UI feedback
+    const index = localUsers.findIndex((u) => u.id === user.id);
+    if (index !== -1) {
+        localUsers.splice(index, 1);
+    }
+
+    // Then send request to server
+    router.delete(
+        `/users/${user.id}`,
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                console.log(`User ${user.name} deleted successfully`);
+            },
+            onError: (error) => {
+                console.error("Error deleting user:", error);
+                alert("Failed to delete user");
+
+                // Add the user back to localUsers if deletion failed
+                if (index !== -1) {
+                    localUsers.splice(index, 0, user);
+                }
+            },
+            onFinish: () => {
+                deletingUserId.value = null;
+            },
+        }
+    );
 }
 
 watch(
@@ -313,6 +381,22 @@ watch(
         }
     },
     { immediate: true }
+);
+
+// Update localUsers when props.users changes
+watch(
+    () => props.users,
+    (newUsers) => {
+        if (Array.isArray(newUsers)) {
+
+            localUsers.splice(0, localUsers.length);
+            newUsers.forEach((user) => {
+                localUsers.push({ ...user });
+            });
+            console.log("Local users updated:", localUsers);
+        }
+    },
+    { immediate: true, deep: true }
 );
 
 const fileInput = ref(null);
@@ -393,15 +477,12 @@ async function generateNewInviteLink() {
         }
     } catch (error) {
         console.error("Erro ao gerar link:", error);
-        alert("Erro ao gerar novo link de convite");
     } finally {
         isGenerating.value = false;
     }
 }
 
 function copyInviteLink(link) {
-    console.log("Copiando link:", link);
-
     try {
         const textarea = document.createElement("textarea");
         textarea.value = link;
@@ -416,16 +497,16 @@ function copyInviteLink(link) {
         document.body.removeChild(textarea);
 
         if (success) {
-            console.log("Link copiado com sucesso!");
+            console.log("Link copied successfully!");
             showCopiedNotification.value = true;
             setTimeout(() => {
                 showCopiedNotification.value = false;
             }, 3000);
         } else {
-            console.error("Falha ao copiar o link");
+            console.error("Failed to copy link");
         }
     } catch (err) {
-        console.error("Erro ao copiar link:", err);
+        console.error("Error copying link:", err);
         navigator.clipboard
             .writeText(link)
             .then(() => {
@@ -435,7 +516,7 @@ function copyInviteLink(link) {
                 }, 3000);
             })
             .catch((err) => {
-                console.error("Erro ao copiar com clipboard API:", err);
+                console.error("Error copying with clipboard API:", err);
             });
     }
 }
@@ -456,14 +537,77 @@ function onFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Store the file reference for later upload
     selectedFile.value = file;
 
-    // Create preview using Data URL for display only
     const reader = new FileReader();
     reader.onload = (ev) => {
-        props.server.avatar = ev.target.result; // This is just for preview
+        props.server.avatar = ev.target.result;
     };
     reader.readAsDataURL(file);
 }
+
+function togglePermission(user) {
+    const originalPermission = user.permission;
+
+    user.permission = user.permission === "admin" ? "user" : "admin";
+    console.log(
+        `Toggling ${user.name} from ${originalPermission} to ${user.permission}`
+    );
+
+    axios
+        .post(
+            `/users/${user.id}/toggle-permission`,
+            {}, 
+            {
+                headers: {
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute("content"),
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            }
+        )
+        .then((response) => {
+            console.log("Toggle permission successful:", response.data);
+
+            try {
+                const storedPermissions = JSON.parse(
+                    localStorage.getItem("userPermissions") || "{}"
+                );
+                storedPermissions[user.id] = user.permission;
+                localStorage.setItem(
+                    "userPermissions",
+                    JSON.stringify(storedPermissions)
+                );
+                console.log(
+                    "Saved permissions to localStorage:",
+                    storedPermissions
+                );
+            } catch (err) {
+                console.error("Error saving to localStorage:", err);
+            }
+        })
+        .catch((error) => {
+            console.error("Toggle permission error:", error);
+
+            user.permission = originalPermission;
+            alert("Failed to change permission");
+        });
+
+}
+
+// Update localUsers when props.users changes
+watch(
+    () => props.users,
+    (newUsers) => {
+        if (Array.isArray(newUsers)) {
+            localUsers.splice(0, localUsers.length);
+            const formattedUsers = initUserPermissions(newUsers);
+            formattedUsers.forEach((user) => localUsers.push(user));
+            console.log("Local users updated:", localUsers);
+        }
+    },
+    { immediate: true, deep: true }
+);
 </script>

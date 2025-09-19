@@ -10,49 +10,66 @@ use Inertia\Inertia;
 class ServerController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Displays a list of all servers.
+     *
+     * @return \Illuminate\Http\Response|void
      */
     public function index()
     {
-        //
+        // Implement logic to list servers here
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Shows the form for creating a new server.
+     *
+     * @return \Illuminate\Http\Response|void
      */
     public function create()
     {
-        //
+        // Implement logic to show server creation form here
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Stores a newly created server in the database.
+     *
+     * @param Request $request The HTTP request containing server data.
+     * @return \Illuminate\Http\Response|void
      */
     public function store(Request $request)
     {
-        //
+        // Implement logic to store a new server here
     }
 
     /**
-     * Display the specified resource.
+     * Displays the details of a specific server.
+     *
+     * @param Server $server The server to display.
+     * @return \Illuminate\Http\Response|void
      */
     public function show(Server $server)
     {
-        //
+        // Implement logic to show server details here
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Shows the form for editing a specific server.
+     *
+     * @param Server $server The server to edit.
+     * @return \Illuminate\Http\Response|void
      */
     public function edit(Server $server)
     {
-        //
+        // Implement logic to show server edit form here
     }
 
     /**
-     * Update the specified resource in storage.
+     * Updates the specified server in the database.
+     * Validates input, updates the server's name and avatar, and returns a JSON response or redirects.
+     *
+     * @param Request $request The HTTP request containing updated server data.
+     * @param Server $server The server to update.
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
-
     public function update(Request $request, Server $server)
     {
         $request->validate([
@@ -79,10 +96,13 @@ class ServerController extends Controller
 
 
     /**
-     * Remove the specified resource from storage.
+     * Removes the specified server from the database.
+     *
+     * @param Server $server The server to delete.
+     * @return \Illuminate\Http\Response|void
      */
     public function destroy(Server $server)
     {
-        //
+        // Implement logic to delete a server here
     }
 }

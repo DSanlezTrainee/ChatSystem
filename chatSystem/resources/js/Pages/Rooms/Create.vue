@@ -1,6 +1,5 @@
 <template>
     <div class="flex h-screen bg-black">
-        <!-- Sidebar com navegação -->
         <Sidebar
             :rooms="rooms"
             :users="users"
@@ -10,7 +9,6 @@
             :jetstream="$page.props.jetstream"
         />
 
-        <!-- Conteúdo principal -->
         <div class="flex-1 flex flex-col">
             <header
                 class="bg-gray-900 text-white p-4 border-b border-gray-800 flex items-center"
@@ -20,7 +18,6 @@
 
             <div class="flex-1 overflow-y-auto p-4 bg-gray-800 text-white">
                 <div class="max-w-3xl mx-auto">
-                    <!-- Formulário de criação de sala -->
                     <form
                         @submit.prevent="createRoom"
                         class="bg-gray-900 p-6 rounded-lg shadow-lg"
@@ -49,7 +46,6 @@
                                 Select Users
                             </h2>
 
-                            <!-- Option to select all users -->
                             <div
                                 class="flex items-center justify-between mb-4 pb-2 border-b border-gray-700"
                             >
@@ -101,7 +97,6 @@
                                 </div>
                             </div>
 
-                            <!-- Lista de usuários -->
                             <div class="bg-gray-900 rounded-lg overflow-hidden">
                                 <div
                                     v-if="users.length > 0"
@@ -196,7 +191,6 @@
                             </div>
                         </div>
 
-                        <!-- Botões do formulário -->
                         <div class="flex items-center justify-between mt-8">
                             <button
                                 type="button"
@@ -233,7 +227,6 @@ const props = defineProps({
     errors: Object,
 });
 
-// Estado do formulário
 const form = ref({
     name: "",
     avatar: "",
@@ -248,8 +241,6 @@ const errors = ref({});
 const isSelected = (userId) => {
     return form.value.users.includes(userId);
 };
-
-// Alterna a seleção de um usuário
 const toggleUser = (userId) => {
     if (isSelected(userId)) {
         form.value.users = form.value.users.filter((id) => id !== userId);
@@ -260,7 +251,6 @@ const toggleUser = (userId) => {
     }
 };
 
-// Alterna a seleção de todos os usuários
 const toggleSelectAll = () => {
     if (selectAll.value) {
         form.value.users = [];
@@ -271,11 +261,9 @@ const toggleSelectAll = () => {
     }
 };
 
-// Criar sala
 const createRoom = () => {
     processing.value = true;
 
-    // Adicionar o usuário atual à lista
     if (!form.value.users.includes(props.currentUser.id)) {
         form.value.users.push(props.currentUser.id);
     }

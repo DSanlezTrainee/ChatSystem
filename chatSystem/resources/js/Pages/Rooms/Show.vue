@@ -1,6 +1,7 @@
 <template>
     <div class="flex h-screen bg-black">
         <Sidebar
+            :server="server"
             :rooms="rooms"
             :users="users"
             :selectedRoom="room"
@@ -204,7 +205,7 @@
                                         >
                                             <textarea
                                                 v-model="editingMessage.content"
-                                                class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600 "
+                                                class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600"
                                                 @keydown.enter.prevent="
                                                     updateMessage
                                                 "
@@ -327,6 +328,7 @@ import Sidebar from "@/Pages/Chat/Sidebar.vue";
 import router from "@/router-config";
 
 const props = defineProps({
+    server: Object,
     room: Object,
     rooms: Array,
     users: Array,
@@ -437,18 +439,16 @@ function getUserAvatar(userId) {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`;
 }
 
-// Fechar menu quando clicar fora
+// Close menu when clicking outside
 const closeMenuOnOutsideClick = (e) => {
     if (activeMessageMenu.value && !e.target.closest(".message-menu")) {
         activeMessageMenu.value = null;
     }
 };
 
-// Verificar se o usuário pode editar a mensagem (é autor ou admin)
+// Verify if the current user can edit the message
 function canEditMessage(message) {
-    // Try to get auth user from Inertia page props first
     const authUser = page.props.auth?.user;
-    // Fallback to props.currentUser if auth is not available
     const currentUser = authUser ||
         props.currentUser || { id: null, permission: null };
     return (
@@ -456,7 +456,6 @@ function canEditMessage(message) {
     );
 }
 
-// Abrir/fechar menu de uma mensagem específica
 function toggleMessageMenu(messageId) {
     if (activeMessageMenu.value === messageId) {
         activeMessageMenu.value = null;
@@ -465,7 +464,6 @@ function toggleMessageMenu(messageId) {
     }
 }
 
-// Iniciar edição de mensagem
 function editMessage(message) {
     editingMessage.value = {
         id: message.id,
@@ -473,7 +471,6 @@ function editMessage(message) {
     };
     activeMessageMenu.value = null;
 
-    // Focar no textarea após renderização
     nextTick(() => {
         const textarea = document.querySelector("textarea");
         if (textarea) {
@@ -482,12 +479,10 @@ function editMessage(message) {
     });
 }
 
-// Cancelar edição
 function cancelEdit() {
     editingMessage.value = null;
 }
-
-// Salvar mensagem editada
+e
 function updateMessage() {
     if (!editingMessage.value || !editingMessage.value.content.trim()) {
         return;
@@ -506,7 +501,7 @@ function updateMessage() {
     );
 }
 
-// Excluir mensagem
+
 function deleteMessage(message) {
     if (confirm("Are you sure you want to delete this message?")) {
         router.delete(`/messages/${message.id}`, {
@@ -529,7 +524,6 @@ function deleteMessage(message) {
     opacity: 1;
 }
 
-/* Ensure message menu appears above other content */
 .message-menu {
     z-index: 10;
 }

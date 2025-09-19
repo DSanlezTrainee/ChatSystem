@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Message;
-use App\Models\User;
 use App\Models\Room;
+use App\Models\User;
+use App\Models\Server;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -12,11 +13,23 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class MessageController extends Controller
 {
 
+    /**
+     * MessageController constructor.
+     * Sets up resource authorization for Message model.
+     */
     public function __construct()
     {
         $this->authorizeResource(Message::class, 'message');
     }
 
+    /**
+     * Retrieves messages for a room or between users.
+     * If room_id is provided, returns messages for that room since the user joined.
+     * If to_user_id is provided, returns private messages between the authenticated user and the target user.
+     *
+     * @param Request $request The HTTP request containing query parameters.
+     * @return \Illuminate\Database\Eloquent\Collection The collection of messages.
+     */
     public function index(Request $request)
     {
         $roomId = $request->query('room_id');
@@ -24,9 +37,7 @@ class MessageController extends Controller
         $query = Message::query();
 
         if ($roomId) {
-            // Room messages
             $query->where('room_id', $roomId);
-            // Filtrar por joined_at do usuário na sala
             $currentUserId = Auth::id();
             $room = Room::find($roomId);
             if ($room) {
@@ -48,6 +59,14 @@ class MessageController extends Controller
         return $query->with(['user', 'room', 'toUser'])->orderBy('created_at')->get();
     }
 
+    /**
+     * Stores a new message in the database.
+     * Supports room messages and private messages.
+     * Returns JSON if requested, otherwise redirects back.
+     *
+     * @param Request $request The HTTP request containing message data.
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -62,19 +81,24 @@ class MessageController extends Controller
             return response()->json($message->load(['user', 'room', 'toUser']), 201);
         }
 
-        // If this was a room message, redirect back to the room
-        if ($data['room_id']) {
+        if (!empty($data['room_id'])) {
             return redirect()->back();
         }
-
-        // If this was a direct message, redirect back to the chat with that user
-        if ($data['to_user_id']) {
+        if (!empty($data['to_user_id'])) {
             return redirect()->back();
         }
 
         return redirect()->back();
     }
 
+    /**
+     * Updates the content of an existing message.
+     * Validates input and updates the message, then redirects back.
+     *
+     * @param Request $request The HTTP request containing updated message data.
+     * @param Message $message The message to update.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, Message $message)
     {
         $data = $request->validate([
@@ -85,6 +109,14 @@ class MessageController extends Controller
         return redirect()->back();
     }
 
+    /**
+     * Deletes a message from the database.
+     * Redirects back after deletion.
+     *
+     * @param Request $request The HTTP request.
+     * @param Message $message The message to delete.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Request $request, Message $message)
     {
         $message->delete();
@@ -92,17 +124,16 @@ class MessageController extends Controller
     }
 
     /**
-     * Show the direct message page with a specific user
+     * Shows the direct message page with a specific user.
+     * Loads all rooms and users for the sidebar, and retrieves messages between the authenticated user and the target user.
      *
-     * @param int $user User ID
+     * @param int $user The target user's ID.
      * @return \Inertia\Response
      */
     public function directMessagePage($user)
     {
-        // Obter o usuário atual
         $currentUser = User::find(Auth::id());
 
-        // Obter o usuário de destino
         $toUser = User::findOrFail($user);
 
 
@@ -120,6 +151,7 @@ class MessageController extends Controller
         $messages = $this->index($request);
 
         return \Inertia\Inertia::render('Chat/DirectMessage', [
+            'server' => Server::first(),
             'rooms' => $rooms,
             'users' => $users,
             'currentUser' => $currentUser,
@@ -129,7 +161,11 @@ class MessageController extends Controller
     }
 
     /**
-     * Recebe upload de ficheiro para o chat
+     * Handles file upload for chat messages.
+     * Validates the file, stores it, and creates a message referencing the file.
+     *
+     * @param Request $request The HTTP request containing the file and message data.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function uploadFile(Request $request)
     {
@@ -142,13 +178,12 @@ class MessageController extends Controller
         $file = $request->file('file');
         $path = $file->store('chat_files', 'public');
 
-        // Criar mensagem com referência ao ficheiro
         $message = Message::create([
             'user_id' => $userId,
             'room_id' => $data['room_id'] ?? null,
             'to_user_id' => $data['to_user_id'] ?? null,
             'file_path' => $path,
-            'content' => $file->getClientOriginalName(), // opcional: pode ser vazio ou nome do ficheiro
+            'content' => $file->getClientOriginalName(), 
         ]);
 
         return response()->json($message->load(['user', 'room', 'toUser']), 201);

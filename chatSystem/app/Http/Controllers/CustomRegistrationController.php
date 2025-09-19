@@ -8,7 +8,7 @@ use Laravel\Fortify\Http\Controllers\RegisteredUserController as FortifyRegister
 class CustomRegistrationController extends Controller
 {
     /**
-     * Mostrar página de registro apenas se tiver convite válido
+     * Show a registration page only if there is a valid invite
      */
     public function create(Request $request, FortifyRegisteredUserController $controller)
     {
@@ -17,11 +17,10 @@ class CustomRegistrationController extends Controller
     }
 
     /**
-     * Registrar um novo usuário
+     * Register a new user
      */
     public function store(Request $request, FortifyRegisteredUserController $controller)
     {
-        // Injeção de dependências
         return app()->call([$controller, 'store'], ['request' => $request]);
     }
 }

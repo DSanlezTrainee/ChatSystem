@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -63,6 +64,28 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         app(\Laravel\Jetstream\Contracts\DeletesUsers::class)->delete($user);
-        return response()->json(['message' => 'User deleted']);
+        return redirect()->back();
     }
+
+    public function togglePermission($id)
+    {
+        $targetUser = User::findOrFail($id);
+        $currentUser = User::find(Auth::id());
+
+        //Only admins can change permissions
+        if ($currentUser->permission !== 'admin') {
+            return redirect()->back()->with('error', 'Only administrators can change permissions.');
+        }
+
+        // Don't allow the admin to remove themselves
+        if ($currentUser->id === $targetUser->id) {
+            return redirect()->back()->with('error', 'You cannot change your own permission.');
+        }
+
+        $targetUser->permission = $targetUser->permission === 'admin' ? 'user' : 'admin';
+        $targetUser->save();
+
+        return redirect()->back()->with('success', 'Permission changed successfully.');
+    }
+    
 }

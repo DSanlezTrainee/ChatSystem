@@ -11,7 +11,13 @@ use Inertia\Inertia;
 
 class ServerInviteController extends Controller
 {
-    // Retorna o convite atual (pending) do admin logado
+    /**
+     * Returns the current (pending) invite of the logged-in admin.
+     * If the request is AJAX or wants JSON, returns the invite link and token as JSON.
+     * Otherwise, loads rooms and users for the sidebar and renders the invite page.
+     *
+     * @return \Illuminate\Http\JsonResponse|\Inertia\Response
+     */
     public function current()
     {
         $invite = ServerInvite::where('inviter_id', Auth::id())
@@ -19,15 +25,12 @@ class ServerInviteController extends Controller
             ->latest('created_at')
             ->first();
 
-        // For AJAX requests, return JSON
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json([
                 'invite_link' => $invite ? url('/invite/' . $invite->token) : null,
                 'token' => $invite ? $invite->token : null,
             ]);
         }
-
-        // For normal requests, return Inertia view
         // Get rooms and users for sidebar
         $user = Auth::user();
         $rooms = $user->rooms;
@@ -42,10 +45,16 @@ class ServerInviteController extends Controller
         ]);
     }
 
-    // Gera um novo convite geral
+    /**
+     * Generates a new general invite for the logged-in admin.
+     * Invalidates all previous pending invites, creates a new invite, and returns the link and token.
+     * Returns JSON for AJAX requests, otherwise redirects to the manage page.
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
     public function generate()
     {
-        // Invalida todos os convites anteriores do admin
+        // Invalidates all previous invites of the admin
         ServerInvite::where('inviter_id', Auth::id())
             ->where('status', 'pending')
             ->update(['status' => 'expired']);
@@ -57,34 +66,38 @@ class ServerInviteController extends Controller
             'status' => 'pending',
         ]);
 
-        // Para requisições AJAX/JSON, retorna JSON
         if (request()->ajax() || request()->wantsJson() || request()->header('X-Inertia') === 'false') {
             return response()->json([
                 'invite_link' => url('/invite/' . $invite->token),
                 'token' => $invite->token,
             ]);
         }
-
-        // Para requisições Inertia normais, redireciona para a página de gerenciamento
         return redirect()->route('server-invite.manage')->with('success', 'New invite link generated successfully.');
     }
 
-    // Usa/aceita um convite geral
+    /**
+     * Accepts a general invite using the provided token.
+     * Handles expired, invalid, or non-pending invites with appropriate HTTP errors.
+     * Redirects to the registration page with the invite token if valid.
+     *
+     * @param string $token The invite token to accept.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function accept($token)
     {
         $invite = ServerInvite::where('token', $token)->first();
 
-        // Se o convite não existir, retornar 404
+        // If the invite doesn't exist, return 404
         if (!$invite) {
             abort(404, 'Invite not found');
         }
 
-        // Se o status for expirado, retornar erro 410 (Gone)
+        // If the status is expired, return 410 (Gone)
         if ($invite->status === 'expired') {
             abort(410, 'This invite link has expired');
         }
 
-        // Se o status não for pending, retornar erro 403
+        // If the status is not pending, return 403
         if ($invite->status !== 'pending') {
             abort(403, 'This invite link is not valid');
         }
@@ -92,7 +105,13 @@ class ServerInviteController extends Controller
         return redirect('/register?invite_token=' . $token);
     }
 
-    // Página para gerenciar convites
+    /**
+     * Shows the page to manage server invites for the logged-in admin.
+     * Loads pending and used invites, rooms, users, and server data for the sidebar.
+     * Handles errors by logging and redirecting to the rooms index with an error message.
+     *
+     * @return \Inertia\Response|\Illuminate\Http\RedirectResponse
+     */
     public function manage()
     {
         try {
@@ -108,7 +127,6 @@ class ServerInviteController extends Controller
                 ->take(10)
                 ->get();
 
-            // Get rooms and users for sidebar
             $user = Auth::user();
             $rooms = $user->rooms;
             $users = \App\Models\User::where('id', '!=', $user->id)->get(['id', 'name', 'avatar', 'status']);
@@ -126,10 +144,9 @@ class ServerInviteController extends Controller
                 'rooms' => $rooms,
                 'users' => $users,
                 'currentUser' => $user,
-                'server' => $server 
+                'server' => $server
             ]);
         } catch (\Exception $e) {
-            // Log o erro
             Log::error('Error loading the pages with invites: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
 

@@ -1,6 +1,7 @@
 <template>
     <div class="flex h-screen bg-black">
         <Sidebar
+            :server="server"
             :rooms="rooms"
             :users="users"
             :selectedRoom="null"
@@ -130,11 +131,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import router, { reloadPage } from "@/router-config";
 import Sidebar from "@/Pages/Chat/Sidebar.vue";
 
 const props = defineProps({
+    server: Object,
     rooms: Array,
     users: Array,
     messages: Array,
@@ -157,7 +159,6 @@ function sendMessage() {
             preserveScroll: true,
             onSuccess: () => {
                 newMessage.value = "";
-                // Refresh the messages by revisiting the current page
                 reloadPage({ only: ["messages"] });
             },
         }

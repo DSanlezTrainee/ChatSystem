@@ -24,6 +24,8 @@ Route::post('/register', [CustomRegistrationController::class, 'store'])
 
 Route::middleware(['auth', 'is_admin'])->group(function () {
 
+    
+
     // Admin-only routes
     Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
     Route::get('/rooms/create', [RoomController::class, 'create'])->name('rooms.create');
@@ -44,6 +46,7 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
 
     //Server Management
     Route::put('/servers/{server}', [ServerController::class, 'update']);
+    Route::post('/users/{id}/toggle-permission', [UserController::class, 'togglePermission'])->name('users.togglePermission'); 
 
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 });

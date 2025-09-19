@@ -1,6 +1,5 @@
 <template>
     <div class="flex h-screen bg-black">
-        <!-- Sidebar com navegação -->
         <Sidebar
             :rooms="rooms"
             :users="users"
@@ -10,7 +9,6 @@
             :jetstream="$page.props.jetstream"
         />
 
-        <!-- Conteúdo principal -->
         <div class="flex-1 flex flex-col">
             <header
                 class="bg-gray-900 text-white p-4 border-b border-gray-800 flex items-center justify-between"
@@ -24,7 +22,7 @@
 
             <div class="flex-1 overflow-y-auto p-4 bg-gray-800 text-white">
                 <div class="max-w-3xl mx-auto">
-                    <!-- Formulário de edição de usuários -->
+            
                     <form
                         @submit.prevent="updateRoom"
                         class="bg-gray-900 p-6 rounded-lg shadow-lg"
@@ -53,7 +51,6 @@
                                 Users in Room
                             </h2>
 
-                            <!-- Opção para selecionar todos -->
                             <div
                                 class="flex items-center justify-between mb-4 pb-2 border-b border-gray-700"
                             >
@@ -105,7 +102,6 @@
                                 </div>
                             </div>
 
-                            <!-- Lista de usuários -->
                             <div class="bg-gray-900 rounded-lg overflow-hidden">
                                 <div
                                     v-if="users.length > 0"
@@ -201,7 +197,6 @@
                             </div>
                         </div>
 
-                        <!-- Botões do formulário -->
                         <div class="flex items-center justify-between mt-8">
                             <button
                                 type="button"
@@ -259,7 +254,6 @@ const props = defineProps({
     errors: Object,
 });
 
-// Estado do formulário
 const form = ref({
     name: "",
     users: [],
@@ -269,11 +263,9 @@ const processing = ref(false);
 const selectAll = ref(false);
 const errors = ref({});
 
-// Inicializar formulário com valores da sala
 onMounted(() => {
     form.value.name = props.room?.name || "";
     form.value.users = [...(props.selectedUserIds || [])];
-    // IDs dos usuários exceto admin
     const nonAdminUserIds = props.users
         ? props.users
               .filter((u) => u.id !== props.currentUser.id)
@@ -310,12 +302,11 @@ watch(
     { deep: true }
 );
 
-// Verifica se um usuário está selecionado
+
 const isSelected = (userId) => {
     return form.value.users.includes(userId);
 };
 
-// Alterna a seleção de um usuário
 const toggleUser = (userId) => {
     if (isSelected(userId)) {
         form.value.users = form.value.users.filter((id) => id !== userId);
@@ -326,7 +317,6 @@ const toggleUser = (userId) => {
     }
 };
 
-// Alterna a seleção de todos os usuários
 const toggleSelectAll = () => {
     if (selectAll.value) {
         form.value.users = [];
@@ -337,18 +327,15 @@ const toggleSelectAll = () => {
     }
 };
 
-// Atualizar sala
 const updateRoom = () => {
     processing.value = true;
 
-    // Adicionar o usuário atual à lista se ainda não estiver
     if (!form.value.users.includes(props.currentUser.id)) {
         form.value.users.push(props.currentUser.id);
     }
 
     router.put(`/rooms/${props.room.id}`, form.value, {
         onSuccess: () => {
-            // Redirecionar para a sala após sucesso
             router.visit(`/rooms/${props.room.id}`);
         },
         onError: (e) => {
@@ -358,25 +345,25 @@ const updateRoom = () => {
     });
 };
 
-// Excluir sala
+
 const deleteRoom = () => {
     if (
-        confirm(`Tem certeza que deseja excluir a sala "${props.room.name}"?`)
+        confirm(`Are you sure you want to delete the room "${props.room.name}"?`)
     ) {
-        // Usar o mesmo padrão que funciona no Create.vue, sem callbacks complexos e sem redirecionamento manual
+        
         router.delete(
             `/rooms/${props.room.id}`,
             {},
             {
                 preserveState: false,
                 preserveScroll: false,
-                // Não usar onSuccess ou onFinish callbacks
+                
             }
         );
     }
 };
 
-// Cancelar edição e voltar para a sala
+
 const cancelEdit = () => {
     router.visit(`/rooms/${props.room.id}`);
 };
